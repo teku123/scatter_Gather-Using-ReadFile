@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="516ba4ee-f3c8-49de-b676-41165ebf5832" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="5476b5d5-5b71-45dd-8916-f77bd009de13" >
+		<file:connection workingDir="C:\File" />
+	</file:config>
+	<flow name="scattergather_Mar11" doc:id="4295ecb5-e31e-4989-893b-7cb3f84a5f17" >
+		<http:listener doc:name="Listener" doc:id="036a55c0-d4a0-448b-a18d-2cade9ab5715" config-ref="HTTP_Listener_config" path="/scatterG"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="8f525fcb-13f3-4966-8829-33b94b2d1faa" >
+			<route >
+				<file:read doc:name="Car.txt" doc:id="870c7000-240a-416f-8f44-9d387b00512c" path="car.xml" config-ref="File_Config"/>
+			</route>
+			<route >
+				<file:read doc:name="Hotel.txt" doc:id="15e1cb7a-dbc3-4e09-83bc-169596cbc7c0" path="hotel.xml" config-ref="File_Config"/>
+			</route>
+			<route >
+				<file:read doc:name="Airline.txt" doc:id="ab78ee67-467b-428d-9815-9a55a11a48bd" path="airline.xml" config-ref="File_Config"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Flatten" doc:id="7d31e7bd-a4fa-4234-971d-a3ab5a25db70" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+flatten(payload..payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="fb19f727-1a24-4e54-9865-187b2d05af97" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml writeDeclaration=false
+---
+{
+	travel_info:{
+	confim_report:{
+		Air: payload.airline.confirmation,
+		hotel:payload.Hotel.confirmation,
+		car:payload.car.confirmation
+		
+	},
+	air:payload.airline,
+	hotel:payload.Hotel,
+	car:payload.car
+}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
